@@ -14,6 +14,7 @@
 #
 # Copyright Cloudera 2013
 
+tmpl_dir="tmpl"
 domain="$(hostname -d)"
 hostname="$(hostname -f)"
 kdc_realm="CLOUDERA"
@@ -130,10 +131,10 @@ configure_kdc() {
   $MKDIR "$kdc_directory_tmp" ||
     error "Failed to create KDC temp directory:$kdc_directory_tmp" 1
 
-  $SED -e "s/@@kdc_realm@@/${kdc_realm}/" kdc.conf.tmpl > "${kdc_directory_tmp}/kdc.conf" ||
+  $SED -e "s/@@kdc_realm@@/${kdc_realm}/" "${tmpl_dir}/kdc.conf.tmpl" > "${kdc_directory_tmp}/kdc.conf" ||
     error "Unable to generate kdc.conf" 1
 
-  $SED -e "s/@@kdc_realm@@/${kdc_realm}/" kadm5.acl.tmpl > "${kdc_directory_tmp}/kadm5.acl" ||
+  $SED -e "s/@@kdc_realm@@/${kdc_realm}/" "${tmpl_dir}/kadm5.acl.tmpl" > "${kdc_directory_tmp}/kadm5.acl" ||
     error "Unable to generate kadm5.acl" 1
 
   if [ -d "$kdc_directory" ] ; then
@@ -150,7 +151,7 @@ configure_krb_client() {
 
   $SED -e "s/@@kdc_realm@@/${kdc_realm}/g;
     s/@@hostname@@/${hostname}/g;
-    s/@@domain@@/${domain}/g;" etc_krb5.conf.tmpl > "/etc/krb5.conf.tmp" ||
+    s/@@domain@@/${domain}/g;" "${tmpl_dir}/etc_krb5.conf.tmpl" > "/etc/krb5.conf.tmp" ||
     error "Unable to generate /etc/krb5.conf" 1
 
   if [ -f "/etc/krb5.conf" ] ; then
@@ -203,7 +204,7 @@ configure_cm_files() {
     mv cmf.keytab /etc/cloudera-scm-server/cmf.keytab ||
       error "Unable to install /etc/cloudera-scm-server/cmf.keytab" 1
 
-    $SED -e "s/@@kdc_realm@@/${kdc_realm}/g" cmf.principal.tmpl > /etc/cloudera-scm-server/cmf.principal.tmp ||
+    $SED -e "s/@@kdc_realm@@/${kdc_realm}/g" "${tmpl_dir}/cmf.principal.tmpl" > /etc/cloudera-scm-server/cmf.principal.tmp ||
       error "Unable to generate /etc/cloudera-scm-server/cmf.principal.tmp file" 1
     $CHOWN 0600 /etc/cloudera-scm-server/cmf.principal.tmp ||
       error "Unable to install /etc/cloudera-scm-server/cmf.principal" 1
