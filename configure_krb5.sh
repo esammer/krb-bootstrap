@@ -199,14 +199,14 @@ configure_cm_files() {
   if [ -d "/etc/cloudera-scm-server" ] ; then
     $CHOWN cloudera-scm:cloudera-scm cmf.keytab ||
       error "Unable to install /etc/cloudera-scm-server/cmf.keytab" 1
-    $CHOWN 0600 cmf.keytab ||
+    $CHMOD 0600 cmf.keytab ||
       error "Unable to install /etc/cloudera-scm-server/cmf.keytab" 1
     mv cmf.keytab /etc/cloudera-scm-server/cmf.keytab ||
       error "Unable to install /etc/cloudera-scm-server/cmf.keytab" 1
 
     $SED -e "s/@@kdc_realm@@/${kdc_realm}/g" "${tmpl_dir}/cmf.principal.tmpl" > /etc/cloudera-scm-server/cmf.principal.tmp ||
       error "Unable to generate /etc/cloudera-scm-server/cmf.principal.tmp file" 1
-    $CHOWN 0600 /etc/cloudera-scm-server/cmf.principal.tmp ||
+    $CHMOD 0600 /etc/cloudera-scm-server/cmf.principal.tmp ||
       error "Unable to install /etc/cloudera-scm-server/cmf.principal" 1
     $CHOWN cloudera-scm:cloudera-scm /etc/cloudera-scm-server/cmf.principal.tmp ||
       error "Unable to install /etc/cloudera-scm-server/cmf.principal" 1
