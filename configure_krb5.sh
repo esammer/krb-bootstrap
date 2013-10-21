@@ -19,6 +19,7 @@ domain="$(hostname -d)"
 hostname="$(hostname -f)"
 kdc_realm="CLOUDERA"
 kdc_directory="/var/kerberos/krb5kdc"
+client_conf_file="/etc/krb5.conf"
 
 log() {
   local level="$1"
@@ -93,10 +94,11 @@ prompt_for_safety() {
   echo
   echo "Using the following settings:"
   echo
-  echo "         domain: ${domain}"
-  echo "       hostname: ${hostname}"
-  echo "      kdc_realm: ${kdc_realm}"
-  echo "  kdc_directory: ${kdc_directory}"
+  echo "            domain: ${domain}"
+  echo "          hostname: ${hostname}"
+  echo "         kdc_realm: ${kdc_realm}"
+  echo "     kdc_directory: ${kdc_directory}"
+  echo "  client_conf_file: ${client_conf_file}"
   echo
   echo "*** DANGER DANGER DANGER DANGER DANGER ***"
   echo "You have 10 seconds to hit Control-C to stop this script!"
@@ -142,6 +144,28 @@ configure_kdc() {
       error "Can not back up existing kdc directory: $kdc_directory" 1
   fi
 
+  $SED -e "s#@@client_conf_file@@#${client_conf_file}#" "${tmpl_dir}/krb5kdc.tmpl" > "/etc/sysconfig/krb5kdc.tmp" ||
+    error "Unable to generate /etc/sysconfig/krb5kdc.tmp" 1
+
+  $SED -e "s#@@client_conf_file@@#${client_conf_file}#" "${tmpl_dir}/kadmin.tmpl" > "/etc/sysconfig/kadmin.tmp" ||
+    error "Unable to generate /etc/sysconfig/kadmin.tmp" 1
+
+  if [ -f "/etc/sysconfig/krb5kdc" ] ; then
+    cp "/etc/sysconfig/krb5kdc" "/etc/sysconfig/krb5kdc.bak.$(generate_unique_str)" ||
+      error "Unable to back up /etc/sysconfig/krb5kdc" 1
+  fi
+
+  mv "/etc/sysconfig/krb5kdc.tmp" "/etc/sysconfig/krb5kdc" ||
+    error "Unable to move /etc/sysconfig/krb5kdc.tmp to /etc/sysconfig/krb5kdc" 1
+
+  if [ -f "/etc/sysconfig/kadmin" ] ; then
+    cp "/etc/sysconfig/kadmin" "/etc/sysconfig/kadmin.bak.$(generate_unique_str)" ||
+      error "Unable to back up /etc/sysconfig/kadmin" 1
+  fi
+
+  mv "/etc/sysconfig/kadmin.tmp" "/etc/sysconfig/kadmin" ||
+    error "Unable to move /etc/sysconfig/kadmin.tmp to /etc/sysconfig/kadmin" 1
+
   mv "$kdc_directory_tmp" "$kdc_directory" ||
     error "Unable to move $kdc_directory_tmp to $kdc_directory" 1
 }
@@ -151,16 +175,18 @@ configure_krb_client() {
 
   $SED -e "s/@@kdc_realm@@/${kdc_realm}/g;
     s/@@hostname@@/${hostname}/g;
-    s/@@domain@@/${domain}/g;" "${tmpl_dir}/etc_krb5.conf.tmpl" > "/etc/krb5.conf.tmp" ||
-    error "Unable to generate /etc/krb5.conf" 1
+    s/@@domain@@/${domain}/g;" "${tmpl_dir}/etc_krb5.conf.tmpl" > "${client_conf_file}.tmp" ||
+    error "Unable to generate ${client_conf_file}" 1
 
-  if [ -f "/etc/krb5.conf" ] ; then
-    mv "/etc/krb5.conf" "/etc/krb5.conf.bak.$(generate_unique_str)" ||
-      error "Unable to back up /etc/krb5.conf" 1
+  if [ -f "${client_conf_file}" ] ; then
+    mv "${client_conf_file}" "${client_conf_file}.bak.$(generate_unique_str)" ||
+      error "Unable to back up ${client_conf_file}" 1
   fi
 
-  mv "/etc/krb5.conf.tmp" "/etc/krb5.conf" ||
-    error "Unable to move /etc/krb5.conf.tmp to /etc/krb5.conf" 1
+  mv "${client_conf_file}.tmp" "${client_conf_file}" ||
+    error "Unable to move ${client_conf_file}.tmp to ${client_conf_file}" 1
+
+  export KRB5_CONFIG=${client_conf_file}
 }
 
 create_kdc_database() {
