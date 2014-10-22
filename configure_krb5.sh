@@ -210,8 +210,7 @@ create_kdc_database() {
   log DEBUG "Generating cloudera-scm/admin principal for Cloudera Manager"
 
   $KADMIN_LOCAL >/dev/null <<EOF
-  addprinc -randkey cloudera-scm/admin
-  xst -k cmf.keytab cloudera-scm/admin
+  addprinc -pw cloudera cloudera-scm/admin
 EOF
 
   echo
@@ -283,7 +282,7 @@ install_krb_packages
 configure_kdc
 configure_krb_client
 create_kdc_database
-configure_cm_files
+#configure_cm_files
 start_services
 display_next_steps
 
